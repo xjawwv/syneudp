@@ -48,138 +48,180 @@ export default function InstancesPage() {
   function getStatusColor(status: string) {
     switch (status) {
       case "running":
-        return "bg-green-100 text-green-700";
+        return "bg-green-50 text-green-600";
       case "suspended":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-amber-50 text-amber-600";
       case "terminated":
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-50 text-gray-500";
       case "provisioning":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-50 text-blue-600";
       case "error":
-        return "bg-red-100 text-red-700";
+        return "bg-red-50 text-red-600";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-50 text-gray-600";
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Database Instances</h1>
-        <Link
-          href="/dashboard/infrastructure/database/new"
-          className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-        >
-          Create Instance
-        </Link>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Managed Databases</h1>
+          <p className="text-gray-500 mt-1 font-medium">Manage your PostgreSQL, MySQL, and MariaDB databases</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => loadInstances()}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm active:scale-95"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+          <Link
+            href="/dashboard/infrastructure/database/new"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95 shadow-blue-200"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+            </svg>
+            Create Database
+          </Link>
+        </div>
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
-          Loading...
+        <div className="bg-white rounded-3xl border border-gray-100 p-32 shadow-sm flex flex-col items-center justify-center min-h-[400px]">
+            <div className="relative">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-100 border-t-blue-600 mb-6"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-blue-600 font-bold text-xs uppercase tracking-widest animate-pulse">
+                    SYNE
+                </div>
+            </div>
+            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Loading Databases...</p>
         </div>
       ) : instances.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <svg
-            className="w-16 h-16 mx-auto text-gray-300 mb-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
-            />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-800 mb-2">
-            No instances yet
-          </h3>
-          <p className="text-gray-500 mb-6">
-            Create your first database instance to get started
-          </p>
-          <Link
-            href="/dashboard/infrastructure/database/new"
-            className="inline-flex bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-          >
-            Create Instance
-          </Link>
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+             {/* Table Header Placeholder */}
+             <div className="grid grid-cols-7 gap-4 px-8 py-5 bg-gray-50/30 border-b border-gray-100">
+                {['NAME', 'STATUS', 'USAGE', 'AUTO RENEWAL', 'PRICE', 'EXPIRY', 'ACTIONS'].map(head => (
+                    <div key={head} className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em]">
+                        {head}
+                    </div>
+                ))}
+            </div>
+            
+            <div className="py-32 px-8 text-center flex flex-col items-center">
+              <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mb-8 rotate-3 transition-transform hover:rotate-0">
+                <svg
+                    className="w-12 h-12 text-gray-200"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+                    />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                No databases found
+              </h3>
+              <p className="text-gray-500 mb-10 max-w-sm font-medium leading-relaxed">
+                Create your first managed database to get started with PostgreSQL, MySQL, or Redis.
+              </p>
+              <Link
+                href="/dashboard/infrastructure/database/new"
+                className="inline-flex items-center gap-3 bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95 group"
+              >
+                <div className="bg-blue-500 p-1 rounded-lg group-hover:bg-blue-400 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                    </svg>
+                </div>
+                Create Database
+              </Link>
+            </div>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {instances.map((instance) => (
-            <Link
-              key={instance.id}
-              href={`/dashboard/infrastructure/database/${instance.id}`}
-              className="bg-white rounded-xl border border-gray-200 p-6 hover:border-primary-300 hover:shadow-md transition-all"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      instance.engine === "mysql"
-                        ? "bg-blue-100"
-                        : "bg-indigo-100"
-                    }`}
-                  >
-                    <svg
-                      className={`w-5 h-5 ${
-                        instance.engine === "mysql"
-                          ? "text-blue-600"
-                          : "text-indigo-600"
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      {instance.dbName}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {instance.engine} - {instance.productName}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                    instance.status
-                  )}`}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
+             {/* Table Header */}
+             <div className="grid grid-cols-7 gap-4 px-8 py-5 bg-gray-50/30 border-b border-gray-100">
+                {['NAME', 'STATUS', 'USAGE', 'AUTO RENEWAL', 'PRICE', 'EXPIRY', 'ACTIONS'].map(head => (
+                    <div key={head} className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em]">
+                        {head}
+                    </div>
+                ))}
+            </div>
+
+            <div className="divide-y divide-gray-100">
+              {instances.map((instance) => (
+                <Link
+                  key={instance.id}
+                  href={`/dashboard/infrastructure/database/${instance.id}`}
+                  className="grid grid-cols-7 gap-4 px-8 py-6 items-center hover:bg-gray-50/40 transition-all group"
                 >
-                  {instance.status}
-                </span>
-              </div>
-              <div className="flex items-center gap-6 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                  {instance.host}:{instance.port}
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {formatCurrency(instance.ratePerHour)}/hr
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  {new Date(instance.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-            </Link>
-          ))}
+                  {/* NAME */}
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                        instance.engine === 'mysql' ? 'bg-blue-50 text-blue-600' : 
+                        instance.engine === 'postgresql' ? 'bg-indigo-50 text-indigo-600' :
+                        'bg-rose-50 text-rose-600'
+                    }`}>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div className="font-bold text-gray-900 text-base">{instance.dbName}</div>
+                        <div className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">{instance.engine}</div>
+                    </div>
+                  </div>
+
+                  {/* STATUS */}
+                  <div className="flex">
+                    <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg tracking-[0.05em] shadow-sm ${getStatusColor(instance.status)}`}>
+                      {instance.status}
+                    </span>
+                  </div>
+
+                  {/* USAGE */}
+                  <div className="text-sm font-bold text-gray-700">
+                    --
+                  </div>
+
+                  {/* AUTO RENEWAL */}
+                  <div className="text-[11px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                    Active
+                  </div>
+
+                  {/* PRICE */}
+                  <div className="text-sm font-black text-gray-900">
+                    {formatCurrency(instance.ratePerHour)}<span className="text-gray-400 font-bold block text-[9px] uppercase tracking-tighter">Per Hour</span>
+                  </div>
+
+                  {/* EXPIRY */}
+                  <div className="text-sm font-bold text-gray-500">
+                    {instance.terminatedAt ? new Date(instance.terminatedAt).toLocaleDateString() : 'Auto-renew'}
+                  </div>
+
+                  {/* ACTIONS */}
+                  <div className="flex justify-end">
+                    <button className="p-2.5 text-gray-300 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all active:scale-90">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                    </button>
+                  </div>
+                </Link>
+              ))}
+            </div>
         </div>
       )}
     </div>

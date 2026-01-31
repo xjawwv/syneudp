@@ -1,6 +1,11 @@
 import { MongoClient } from "mongodb";
 
-const MONGODB_URL = process.env.MONGODB_URL || "mongodb://root:mongodb_root_secret@localhost:27017/?authSource=admin";
+const MONGODB_HOST = process.env.MONGODB_HOST || "localhost";
+const MONGODB_PORT = process.env.MONGODB_PORT || "27017";
+const MONGODB_USER = process.env.MONGODB_USER || "admin";
+const MONGODB_PASS = process.env.MONGODB_PASS || "256pass652";
+const MONGODB_URL = process.env.MONGODB_URL || `mongodb://${MONGODB_USER}:${MONGODB_PASS}@${MONGODB_HOST}:${MONGODB_PORT}/?authSource=admin`;
+
 const client = new MongoClient(MONGODB_URL);
 
 export async function createDatabaseAndUser(

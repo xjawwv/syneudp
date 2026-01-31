@@ -29,18 +29,43 @@ This VPS acts as the compute node where user databases are actually provisioned.
     MONGODB_URL=mongodb://root:password@localhost:27017
     ```
 
-3.  **Run Agent**:
+3.  **Domain Setup (Opsional tapi Disarankan)**:
+    - Masuk ke dashboard Domain Anda (misal: Cloudflare/Niagahoster).
+    - Tambahkan **A Record**:
+        - Name: `db` (sehingga domain jadi `db.example.com`)
+        - Content: `[IP Public VPS B]`
+        - Proxy: **OFF** (Hanya DNS). Koneksi DB butuh koneksi TCP langsung.
+
+4.  **Run Agent**:
     ```bash
     pm2 start "npm run dev" --name "syneudp-agent"
     ```
 
-## Cloudflare Tunnel (Important)
-If this VPS doesn't have a public static IP, expose the agent port:
-```bash
-cloudflared tunnel --url http://localhost:4001
-```
-Copy the resulting URL and put it in `AGENT_URL` on **VPS A**.
+## Nginx Configuration (VPS B)
+Karena Anda menggunakan Nginx, buatlah config untuk meneruskan trafik API ke Agent:
 
-## Security
-- Open ports `3306`, `5433`, `27017` only to **VPS A's IP** (Whitelisting).
-- The Agent itself should only be reachable via the Tunnel or a Private Network.
+```nginx
+# /etc/nginx/sites-available/agent
+server {
+    listen 80;
+    server_name agent.anda.com;
+
+    location / {
+        proxy_pass http://localhost:4001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+## Security & Firewall
+Sangat penting! Karena laptop Anda (Control Plane) perlu menyambung ke VPS B, Anda harus membuka port berikut di VPS B:
+
+1.  **Port 80/443**: Untuk Agent API (lewat Nginx).
+2.  **Port 3307, 5433, 27017**: Untuk koneksi Database langsung.
+
+**Penting tentang Cloudflare Tunnel**:
+Jika Cloudflare Tunnel hanya ada di **Laptop**, maka Laptop Anda bertindak sebagai **Client** yang menyambung ke VPS B. 
+- Pastikan subdomain `agent.anda.com` dan `db.anda.com` sudah diarahkan ke IP VPS B di DNS.
+- Matikan **Proxy (Orange Cloud)** di Cloudflare DNS khusus untuk port database agar koneksi TCP lancar.
+

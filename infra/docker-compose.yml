@@ -4,7 +4,7 @@ services:
     container_name: syneudp-control-postgres
     environment:
       POSTGRES_USER: syneudp
-      POSTGRES_PASSWORD: internal_password_secure
+      POSTGRES_PASSWORD: 256pass652
       POSTGRES_DB: syneudp_control
     ports:
       - "55432:5432"
@@ -20,9 +20,9 @@ services:
     image: mysql:8.0
     container_name: syneudp-service-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: mysql_root_secret
+      MYSQL_ROOT_PASSWORD: 256pass652
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - service_mysql_data:/var/lib/mysql
     healthcheck:
@@ -36,7 +36,7 @@ services:
     container_name: syneudp-service-postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres_root_secret
+      POSTGRES_PASSWORD: 256pass652
       POSTGRES_DB: postgres
     ports:
       - "5433:5432"
@@ -54,7 +54,7 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: adminpass
+      MONGO_INITDB_ROOT_PASSWORD: 256pass652
     ports:
       - "27017:27017"
     volumes:
@@ -79,3 +79,4 @@ volumes:
   service_mysql_data:
   service_postgres_data:
   redis_data:
+  mongodb_data:

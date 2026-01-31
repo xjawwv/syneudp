@@ -22,9 +22,9 @@ This VPS hosts the main application, API, and management services.
     PORT=4000
     DATABASE_URL=postgresql://... (Internal DB)
     REDIS_URL=redis://localhost:6379
-    AGENT_URL=https://your-vpsB-tunnel.com
+    AGENT_URL=https://your-vpsB-tunnel.com # AGENT API (via Tunnel)
     AGENT_TOKEN=your-secure-token
-    DB_HOST=vpsB-public-ip
+    DB_HOST=db.example.com # Domain atau IP VPS B (untuk koneksi DB)
     ```
 
 3.  **Initialization**:

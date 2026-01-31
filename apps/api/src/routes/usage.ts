@@ -13,7 +13,7 @@ router.get("/", async (req: AuthRequest, res: Response): Promise<void> => {
       where: { userId: req.userId },
       select: { id: true },
     });
-    const instanceIds = instances.map((i) => i.id);
+    const instanceIds = instances.map((i: (typeof instances)[number]) => i.id);
     const usageRecords = await prisma.usageRecord.findMany({
       where: {
         instanceId: { in: instanceIds },
@@ -23,11 +23,11 @@ router.get("/", async (req: AuthRequest, res: Response): Promise<void> => {
       include: { instance: { select: { dbName: true, engine: true } } },
       orderBy: { startTime: "desc" },
     });
-    const totalAmount = usageRecords.reduce((sum, r) => sum + Number(r.amount), 0);
+    const totalAmount = usageRecords.reduce((sum: number, r: (typeof usageRecords)[number]) => sum + Number(r.amount), 0);
     res.json({
       success: true,
       data: {
-        records: usageRecords.map((r) => ({
+        records: usageRecords.map((r: (typeof usageRecords)[number]) => ({
           id: r.id,
           instanceId: r.instanceId,
           dbName: r.instance.dbName,

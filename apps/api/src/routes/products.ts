@@ -10,7 +10,7 @@ router.get("/", async (_req: Request, res: Response): Promise<void> => {
     });
     res.json({
       success: true,
-      data: products.map((p) => ({
+      data: products.map((p: (typeof products)[number]) => ({
         id: p.id,
         name: p.name,
         engine: p.engine,

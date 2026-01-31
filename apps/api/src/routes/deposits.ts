@@ -46,7 +46,7 @@ router.get("/", async (req: AuthRequest, res: Response): Promise<void> => {
     });
     res.json({
       success: true,
-      data: deposits.map((d) => ({
+      data: deposits.map((d: (typeof deposits)[number]) => ({
         id: d.id,
         amount: Number(d.amount),
         status: d.status,

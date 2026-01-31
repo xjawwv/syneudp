@@ -1,5 +1,6 @@
-import { Worker, Queue } from "bullmq";
+import { Worker, Queue, Job } from "bullmq";
 import prisma from "../lib/prisma.js";
+import { Prisma } from "@prisma/client";
 import * as agent from "../lib/agent.js";
 import redis from "../lib/redis.js";
 
@@ -28,7 +29,7 @@ async function processBilling(): Promise<void> {
       where: { instanceId: instance.id, startTime: lastBilledAt },
     });
     if (existingUsage) continue;
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.usageRecord.create({
         data: {
           instanceId: instance.id,
@@ -81,7 +82,7 @@ export function startBillingWorker(): Worker {
   worker.on("completed", () => {
     console.log("Billing job completed");
   });
-  worker.on("failed", (job, err) => {
+  worker.on("failed", (job: Job | undefined, err: Error) => {
     console.error("Billing job failed:", err.message);
   });
   return worker;

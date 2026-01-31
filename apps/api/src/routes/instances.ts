@@ -101,7 +101,7 @@ router.get("/", async (req: AuthRequest, res: Response): Promise<void> => {
     });
     res.json({
       success: true,
-      data: instances.map((i) => ({
+      data: instances.map((i: (typeof instances)[number]) => ({
         id: i.id,
         engine: i.engine,
         status: i.status,
@@ -150,7 +150,7 @@ router.get("/:id", async (req: AuthRequest, res: Response): Promise<void> => {
         port: instance.port,
         ratePerHour: Number(instance.product.ratePerHour),
         productName: instance.product.name,
-        allowedIPs: instance.allowedIPs.map((ip) => ip.ip),
+        allowedIPs: instance.allowedIPs.map((ip: (typeof instance.allowedIPs)[number]) => ip.ip),
         createdAt: instance.createdAt,
         terminatedAt: instance.terminatedAt,
       },

@@ -1,8 +1,15 @@
 import { Router, Response } from "express";
 import { AuthRequest } from "../middleware/auth.js";
 import prisma from "../lib/prisma.js";
+import { PrismaClient } from "@prisma/client";
 
 const router = Router();
+
+// Type for transaction client
+type TransactionClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 
 router.post(
   "/deposits/:id/confirm",
@@ -20,7 +27,7 @@ router.post(
         res.status(400).json({ success: false, error: "Deposit already processed" });
         return;
       }
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: TransactionClient) => {
         await tx.deposit.update({
           where: { id },
           data: { status: "confirmed", confirmedAt: new Date() },
@@ -62,7 +69,7 @@ router.get("/deposits", async (_req: AuthRequest, res: Response): Promise<void> 
     });
     res.json({
       success: true,
-      data: deposits.map((d) => ({
+      data: deposits.map((d: (typeof deposits)[number]) => ({
         id: d.id,
         userId: d.userId,
         userEmail: d.user.email,
@@ -84,7 +91,7 @@ router.get("/users", async (_req: AuthRequest, res: Response): Promise<void> => 
     });
     res.json({
       success: true,
-      data: users.map((u) => ({
+      data: users.map((u: (typeof users)[number]) => ({
         id: u.id,
         email: u.email,
         balance: u.wallet ? Number(u.wallet.balance) : 0,

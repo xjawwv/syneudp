@@ -17,7 +17,7 @@ async function callAgent(endpoint: string, body: object): Promise<AgentResponse>
     },
     body: JSON.stringify(body),
   });
-  return response.json();
+  return response.json() as Promise<AgentResponse>;
 }
 
 export async function provisionDatabase(

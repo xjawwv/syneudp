@@ -20,7 +20,7 @@ router.get("/", async (req: AuthRequest, res: Response): Promise<void> => {
     });
     res.json({
       success: true,
-      data: ledger.map((entry) => ({
+      data: ledger.map((entry: (typeof ledger)[number]) => ({
         id: entry.id,
         type: entry.type,
         amount: Number(entry.amount),

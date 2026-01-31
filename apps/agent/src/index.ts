@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import * as mysql from "./mysql.js";
 import * as postgres from "./postgres.js";
+import * as mongodb from "./mongodb.js";
 import crypto from "crypto";
 
 const app = express();
@@ -21,7 +22,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction): void {
 
 app.use(authMiddleware);
 
-const EngineSchema = z.enum(["mysql", "postgresql"]);
+const EngineSchema = z.enum(["mysql", "postgresql", "mongodb"]);
 
 const ProvisionSchema = z.object({
   engine: EngineSchema,
@@ -51,8 +52,10 @@ app.post("/provision", async (req: Request, res: Response): Promise<void> => {
     const password = generatePassword();
     if (parsed.engine === "mysql") {
       await mysql.createDatabaseAndUser(parsed.dbName, parsed.dbUser, password);
-    } else {
+    } else if (parsed.engine === "postgresql") {
       await postgres.createDatabaseAndUser(parsed.dbName, parsed.dbUser, password);
+    } else if (parsed.engine === "mongodb") {
+      await mongodb.createDatabaseAndUser(parsed.dbName, parsed.dbUser, password);
     }
     res.json({ success: true, password });
   } catch (error) {
@@ -66,8 +69,10 @@ app.post("/suspend", async (req: Request, res: Response): Promise<void> => {
     const parsed = ActionSchema.parse(req.body);
     if (parsed.engine === "mysql") {
       await mysql.suspendUser(parsed.dbName, parsed.dbUser);
-    } else {
+    } else if (parsed.engine === "postgresql") {
       await postgres.suspendUser(parsed.dbName, parsed.dbUser);
+    } else if (parsed.engine === "mongodb") {
+      await mongodb.suspendUser(parsed.dbName, parsed.dbUser);
     }
     res.json({ success: true });
   } catch (error) {
@@ -81,8 +86,10 @@ app.post("/resume", async (req: Request, res: Response): Promise<void> => {
     const parsed = ActionSchema.parse(req.body);
     if (parsed.engine === "mysql") {
       await mysql.resumeUser(parsed.dbName, parsed.dbUser);
-    } else {
+    } else if (parsed.engine === "postgresql") {
       await postgres.resumeUser(parsed.dbName, parsed.dbUser);
+    } else if (parsed.engine === "mongodb") {
+      await mongodb.resumeUser(parsed.dbName, parsed.dbUser);
     }
     res.json({ success: true });
   } catch (error) {
@@ -96,8 +103,10 @@ app.post("/terminate", async (req: Request, res: Response): Promise<void> => {
     const parsed = ActionSchema.parse(req.body);
     if (parsed.engine === "mysql") {
       await mysql.terminateDatabase(parsed.dbName, parsed.dbUser);
-    } else {
+    } else if (parsed.engine === "postgresql") {
       await postgres.terminateDatabase(parsed.dbName, parsed.dbUser);
+    } else if (parsed.engine === "mongodb") {
+      await mongodb.terminateDatabase(parsed.dbName, parsed.dbUser);
     }
     res.json({ success: true });
   } catch (error) {
@@ -112,8 +121,10 @@ app.post("/rotate-password", async (req: Request, res: Response): Promise<void> 
     const newPassword = generatePassword();
     if (parsed.engine === "mysql") {
       await mysql.rotatePassword(parsed.dbUser, newPassword);
-    } else {
+    } else if (parsed.engine === "postgresql") {
       await postgres.rotatePassword(parsed.dbUser, newPassword);
+    } else if (parsed.engine === "mongodb") {
+      await mongodb.rotatePassword(parsed.dbUser, newPassword);
     }
     res.json({ success: true, newPassword });
   } catch (error) {

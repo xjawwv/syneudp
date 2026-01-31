@@ -39,8 +39,8 @@ router.post(
       }
       const dbName = generateDbName();
       const dbUser = generateDbUser();
-      const host = product.engine === "mysql" ? "localhost" : "localhost";
-      const port = product.engine === "mysql" ? 3306 : 5433;
+      const host = process.env.DB_HOST || "localhost";
+      const port = product.engine === "mysql" ? 3306 : (product.engine === "postgresql" ? 5433 : 27017);
       const instance = await prisma.instance.create({
         data: {
           userId: req.userId!,

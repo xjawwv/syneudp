@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, apiDelete } from "@/lib/api";
 
 import { formatCurrency } from "@/lib/currency";
 import { formatDate } from "@/lib/date";
@@ -49,7 +49,20 @@ export default function InstancesPage() {
       ]);
 
       if (instancesRes.success && instancesRes.data) {
-        setInstances(instancesRes.data);
+        const statusOrder: Record<string, number> = {
+          'running': 0,
+          'provisioning': 1,
+          'suspended': 2,
+          'error': 3,
+          'terminated': 4
+        };
+        const sorted = [...instancesRes.data].sort((a, b) => {
+          const orderA = statusOrder[a.status.toLowerCase()] ?? 99;
+          const orderB = statusOrder[b.status.toLowerCase()] ?? 99;
+          if (orderA !== orderB) return orderA - orderB;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        setInstances(sorted);
       }
       if (walletRes.success && walletRes.data) {
         setWallet(walletRes.data);
@@ -93,11 +106,22 @@ export default function InstancesPage() {
     setSuccess("");
     
     const token = session!.access_token;
-    const res = await apiPost<{ password?: string }>(`/instances/${instanceId}/${action}`, token);
+    let res;
+    
+    if (action === 'delete') {
+      res = await apiDelete<{ message?: string }>(`/instances/${instanceId}`, token);
+    } else {
+      res = await apiPost<{ password?: string }>(`/instances/${instanceId}/${action}`, token);
+    }
     
     if (res.success) {
-      if (action === 'rotate-password' && res.data?.password) {
-        setSuccess(`Password rotated! New password: ${res.data.password}`);
+      if (action === 'rotate-password') {
+        const data = res.data as { password?: string };
+        if (data?.password) {
+          setSuccess(`Password rotated! New password: ${data.password}`);
+        }
+      } else if (action === 'delete') {
+        setSuccess("Instance deleted successfully");
       } else {
         setSuccess(`Instance ${action === 'suspend' ? 'suspended' : action + 'd'} successfully`);
       }
@@ -372,16 +396,30 @@ export default function InstancesPage() {
                             {actionLoading?.id === instance.id && actionLoading?.action === 'rotate-password' ? 'Rotating...' : 'Rotate Password'}
                           </button>
                         )}
-                        <button
-                          onClick={(e) => handleInstanceAction(e, instance.id, 'terminate')}
-                          disabled={actionLoading?.id === instance.id}
-                          className="w-full px-4 py-2.5 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          {actionLoading?.id === instance.id && actionLoading?.action === 'terminate' ? 'Terminating...' : 'Terminate'}
-                        </button>
+                        {instance.status !== 'terminated' && (
+                          <button
+                            onClick={(e) => handleInstanceAction(e, instance.id, 'terminate')}
+                            disabled={actionLoading?.id === instance.id}
+                            className="w-full px-4 py-2.5 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            {actionLoading?.id === instance.id && actionLoading?.action === 'terminate' ? 'Terminating...' : 'Terminate'}
+                          </button>
+                        )}
+                        {instance.status === 'terminated' && (
+                          <button
+                            onClick={(e) => handleInstanceAction(e, instance.id, 'delete')}
+                            disabled={actionLoading?.id === instance.id}
+                            className="w-full px-4 py-2.5 text-left text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            {actionLoading?.id === instance.id && actionLoading?.action === 'delete' ? 'Deleting...' : 'Delete Permanently'}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

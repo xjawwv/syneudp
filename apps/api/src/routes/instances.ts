@@ -68,7 +68,7 @@ router.post(
       const dbName = generateDbName();
       const dbUser = generateDbUser();
       const host = process.env.DB_HOST || "localhost";
-      const port = product.engine === "mysql" ? 3306 : (product.engine === "postgresql" ? 5433 : 27017);
+      const port = product.engine === "mysql" ? 3307 : (product.engine === "postgresql" ? 5433 : 27017);
       const instance = await prisma.instance.create({
         data: {
           userId: req.userId!,
@@ -276,6 +276,32 @@ router.post("/:id/terminate", async (req: AuthRequest, res: Response): Promise<v
     res.json({ success: true, message: "Instance terminated" });
   } catch {
     res.status(500).json({ success: false, error: "Failed to terminate instance" });
+  }
+});
+
+router.delete("/:id", async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const instance = await prisma.instance.findFirst({
+      where: { id: req.params.id, userId: req.userId },
+    });
+    if (!instance) {
+      res.status(404).json({ success: false, error: "Instance not found" });
+      return;
+    }
+    
+    // Safety check: only allow deleting if terminated
+    if (instance.status !== "terminated") {
+        res.status(400).json({ success: false, error: "Only terminated instances can be deleted permanently" });
+        return;
+    }
+
+    // Delete related allowed IPs first
+    await prisma.allowedIP.deleteMany({ where: { instanceId: instance.id } });
+    await prisma.instance.delete({ where: { id: instance.id } });
+    
+    res.json({ success: true, message: "Instance deleted successfully" });
+  } catch {
+    res.status(500).json({ success: false, error: "Failed to delete instance" });
   }
 });
 

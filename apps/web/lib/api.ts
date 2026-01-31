@@ -44,3 +44,10 @@ export async function apiPut<T>(
   });
   return response.json();
 }
+export async function apiDelete<T>(endpoint: string, token: string): Promise<ApiResponse<T>> {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.json();
+}

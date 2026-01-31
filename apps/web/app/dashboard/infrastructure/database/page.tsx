@@ -67,7 +67,7 @@ export default function InstancesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Database Instances</h1>
         <Link
-          href="/dashboard/instances/new"
+          href="/dashboard/infrastructure/database/new"
           className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
         >
           Create Instance
@@ -100,7 +100,7 @@ export default function InstancesPage() {
             Create your first database instance to get started
           </p>
           <Link
-            href="/dashboard/instances/new"
+            href="/dashboard/infrastructure/database/new"
             className="inline-flex bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
           >
             Create Instance
@@ -111,7 +111,7 @@ export default function InstancesPage() {
           {instances.map((instance) => (
             <Link
               key={instance.id}
-              href={`/dashboard/instances/${instance.id}`}
+              href={`/dashboard/infrastructure/database/${instance.id}`}
               className="bg-white rounded-xl border border-gray-200 p-6 hover:border-primary-300 hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between mb-4">

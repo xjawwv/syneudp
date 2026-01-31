@@ -55,7 +55,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Overview</h1>
         <Link
-          href="/dashboard/instances/new"
+          href="/dashboard/infrastructure/database/new"
           className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
         >
           Create Instance
@@ -129,7 +129,7 @@ export default function DashboardPage() {
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <h3 className="font-semibold text-gray-800">Recent Instances</h3>
             <Link
-              href="/dashboard/instances"
+              href="/dashboard/infrastructure/database"
               className="text-sm text-primary-600 hover:text-primary-700"
             >
               View All
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                   <tr key={instance.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4">
                       <Link
-                        href={`/dashboard/instances/${instance.id}`}
+                        href={`/dashboard/infrastructure/database/${instance.id}`}
                         className="text-primary-600 hover:underline font-medium"
                       >
                         {instance.dbName}

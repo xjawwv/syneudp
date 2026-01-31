@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet, apiPost } from "@/lib/api";
+import { formatCurrency } from "@/lib/currency";
 
 interface Deposit {
   id: string;
@@ -108,7 +109,7 @@ export default function AdminDepositsPage() {
                       <p className="text-xs text-gray-500">{deposit.userId}</p>
                     </td>
                     <td className="px-4 py-4 font-medium text-gray-800">
-                      ${deposit.amount.toFixed(2)}
+                      {formatCurrency(deposit.amount)}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">
                       {new Date(deposit.createdAt).toLocaleString()}

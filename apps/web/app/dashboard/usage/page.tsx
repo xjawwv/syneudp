@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet } from "@/lib/api";
+import { formatCurrency } from "@/lib/currency";
 
 interface UsageRecord {
   id: string;
@@ -40,19 +41,24 @@ export default function UsagePage() {
     if (session?.access_token) {
       loadUsage();
     }
-  }, [session, startDate, endDate]);
+  }, [session?.access_token, startDate, endDate]);
 
   async function loadUsage() {
     setLoading(true);
-    const token = session!.access_token;
-    const res = await apiGet<UsageData>(
-      `/usage?startDate=${startDate}&endDate=${endDate}`,
-      token
-    );
-    if (res.success && res.data) {
-      setUsage(res.data);
+    try {
+        const token = session!.access_token;
+        const res = await apiGet<UsageData>(
+        `/usage?startDate=${startDate}&endDate=${endDate}`,
+        token
+        );
+        if (res.success && res.data) {
+        setUsage(res.data);
+        }
+    } catch (error) {
+        console.error("Failed to load usage:", error);
+    } finally {
+        setLoading(false);
     }
-    setLoading(false);
   }
 
   function formatDuration(seconds: number): string {
@@ -103,7 +109,7 @@ export default function UsagePage() {
                 Total Usage Cost
               </p>
               <p className="text-3xl font-bold mt-1">
-                ${usage.totalAmount.toFixed(2)}
+                {formatCurrency(usage.totalAmount)}
               </p>
             </div>
             <div className="text-right">
@@ -171,10 +177,10 @@ export default function UsagePage() {
                       {formatDuration(record.durationSeconds)}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600 text-right">
-                      ${record.ratePerHour.toFixed(2)}/hr
+                      {formatCurrency(record.ratePerHour)}/hr
                     </td>
                     <td className="px-4 py-4 font-medium text-gray-800 text-right">
-                      ${record.amount.toFixed(4)}
+                      {formatCurrency(record.amount)}
                     </td>
                   </tr>
                 ))}

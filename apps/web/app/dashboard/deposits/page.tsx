@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet, apiPost } from "@/lib/api";
+import { formatCurrency } from "@/lib/currency";
 
 interface Deposit {
   id: string;
@@ -50,7 +51,7 @@ export default function DepositsPage() {
     }
 
     const token = session!.access_token;
-    const res = await apiPost("/deposits", token, { amount: numAmount });
+    const res = await apiPost("/deposits", token, { amount: numAmount / 16000 });
 
     if (res.success) {
       setSuccess("Deposit request created successfully");
@@ -86,7 +87,7 @@ export default function DepositsPage() {
         <form onSubmit={handleSubmit} className="flex gap-4 items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Amount (USD)
+              Amount (IDR)
             </label>
             <input
               type="number"
@@ -146,7 +147,7 @@ export default function DepositsPage() {
                 {deposits.map((deposit) => (
                   <tr key={deposit.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 font-medium text-gray-800">
-                      ${deposit.amount.toFixed(2)}
+                      {formatCurrency(deposit.amount)}
                     </td>
                     <td className="px-4 py-4">
                       <span

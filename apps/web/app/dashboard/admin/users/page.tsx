@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet } from "@/lib/api";
+import { formatCurrency } from "@/lib/currency";
 
 interface User {
   id: string;
@@ -88,7 +89,7 @@ export default function AdminUsersPage() {
                           user.balance < 0 ? "text-red-600" : "text-gray-800"
                         }`}
                       >
-                        ${user.balance.toFixed(2)}
+                        {formatCurrency(user.balance)}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600 text-right">

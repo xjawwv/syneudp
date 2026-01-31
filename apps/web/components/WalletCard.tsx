@@ -1,3 +1,5 @@
+import { formatCurrency } from "@/lib/currency";
+
 interface WalletCardProps {
   balance: number;
   loading?: boolean;
@@ -27,7 +29,7 @@ export default function WalletCard({ balance, loading }: WalletCardProps) {
       {loading ? (
         <div className="h-10 bg-primary-500/50 rounded animate-pulse"></div>
       ) : (
-        <div className="text-3xl font-bold">${balance.toFixed(2)}</div>
+        <div className="text-3xl font-bold">{formatCurrency(balance)}</div>
       )}
     </div>
   );

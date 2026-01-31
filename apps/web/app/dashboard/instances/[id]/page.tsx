@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet, apiPost, apiPut } from "@/lib/api";
+import { formatCurrency } from "@/lib/currency";
 
 interface Instance {
   id: string;
@@ -386,7 +387,7 @@ export default function InstanceDetailPage() {
           <div>
             <label className="text-sm text-gray-500">Hourly Rate</label>
             <p className="font-medium text-gray-800">
-              ${instance.ratePerHour.toFixed(2)}/hour
+              {formatCurrency(instance.ratePerHour)}/hour
             </p>
           </div>
           {instance.terminatedAt && (

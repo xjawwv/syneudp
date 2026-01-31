@@ -1,3 +1,5 @@
+import { formatCurrency } from "@/lib/currency";
+
 interface LedgerEntry {
   id: string;
   type: string;
@@ -71,7 +73,8 @@ export default function LedgerTable({ entries, loading }: LedgerTableProps) {
                       entry.amount >= 0 ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {entry.amount >= 0 ? "+" : ""}${entry.amount.toFixed(2)}
+                    {entry.amount >= 0 ? "+" : ""}
+                    {formatCurrency(entry.amount)}
                   </td>
                   <td className="px-4 py-4 text-sm text-gray-500 text-right">
                     {new Date(entry.createdAt).toLocaleDateString()}

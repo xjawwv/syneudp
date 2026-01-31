@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet } from "@/lib/api";
 
+import { formatCurrency } from "@/lib/currency";
+
 interface Instance {
   id: string;
   engine: string;
@@ -30,12 +32,17 @@ export default function InstancesPage() {
   }, [session]);
 
   async function loadInstances() {
-    const token = session!.access_token;
-    const res = await apiGet<Instance[]>("/instances", token);
-    if (res.success && res.data) {
-      setInstances(res.data);
+    try {
+      const token = session!.access_token;
+      const res = await apiGet<Instance[]>("/instances", token);
+      if (res.success && res.data) {
+        setInstances(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to load instances:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   function getStatusColor(status: string) {
@@ -162,7 +169,7 @@ export default function InstancesPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  ${instance.ratePerHour.toFixed(2)}/hr
+                  {formatCurrency(instance.ratePerHour)}/hr
                 </div>
                 <div className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

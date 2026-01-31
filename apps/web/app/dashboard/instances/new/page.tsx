@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet, apiPost } from "@/lib/api";
+import { formatCurrency } from "@/lib/currency";
 
 interface Product {
   id: string;
@@ -120,7 +121,7 @@ export default function NewInstancePage() {
                 </div>
                 <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                 <div className="mt-auto text-2xl font-bold text-gray-800">
-                  ${product.ratePerHour.toFixed(2)}
+                  {formatCurrency(product.ratePerHour)}
                   <span className="text-sm font-normal text-gray-500">/hour</span>
                 </div>
               </label>
@@ -163,7 +164,7 @@ export default function NewInstancePage() {
                 </div>
                 <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                 <div className="mt-auto text-2xl font-bold text-gray-800">
-                  ${product.ratePerHour.toFixed(2)}
+                  {formatCurrency(product.ratePerHour)}
                   <span className="text-sm font-normal text-gray-500">/hour</span>
                 </div>
               </label>

@@ -4,10 +4,10 @@ services:
     container_name: syneudp-control-postgres
     environment:
       POSTGRES_USER: syneudp
-      POSTGRES_PASSWORD: syneudp_secret
+      POSTGRES_PASSWORD: internal_password_secure
       POSTGRES_DB: syneudp_control
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - control_postgres_data:/var/lib/postgresql/data
     healthcheck:

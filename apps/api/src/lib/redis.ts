@@ -1,5 +1,8 @@
-import Redis from "ioredis";
+import IORedis from "ioredis";
 
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+// Create Redis instance with BullMQ-compatible options
+const redis = new IORedis(process.env.REDIS_URL || "redis://localhost:6379", {
+  maxRetriesPerRequest: null, // Required by BullMQ
+});
 
 export default redis;

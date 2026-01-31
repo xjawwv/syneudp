@@ -257,7 +257,11 @@ export default function NewInstancePage() {
                     
                     <p className="text-sm text-gray-600 mb-6 line-clamp-2">{displayDescription}</p>
                     
-
+                    <div className="mt-auto pt-4 border-t border-gray-100 flex items-baseline gap-1">
+                      <span className="text-sm text-gray-500">Starts at</span>
+                      <span className="text-xl font-bold text-gray-900 ml-1">Rp {pricing.hourlyPrice.toLocaleString('id-ID', {maximumFractionDigits: 2})}</span>
+                      <span className="text-sm text-gray-500">/hr</span>
+                    </div>
                   </label>
                  );
                })}
@@ -284,39 +288,6 @@ export default function NewInstancePage() {
                 <div className="flex justify-between text-xs text-gray-500 mt-2">
                     <span>Rp 5.000 / GB (Base)</span>
                     <span>Total: {formatCurrency(pricing.sellingMonthly)}/bulan</span>
-                </div>
-                
-                <div className="mt-4 bg-gray-50 rounded-lg p-3 text-xs space-y-1 border border-gray-100">
-                    <div className="flex justify-between">
-                        <span className="text-gray-500">Base Price:</span>
-                        <span className="font-mono text-gray-700">Rp 5.000 / GB / Bulan</span>
-                    </div>
-                    
-                    {/* Profit Breakdown */}
-                    <div className="pt-2 border-t border-gray-200 mt-2">
-                        <span className="text-gray-500 font-semibold mb-1 block">Profit Breakdown (10%):</span>
-                        <div className="flex justify-between pl-2">
-                             <span className="text-gray-500">Monthly:</span>
-                             <span className="font-mono text-gray-700">Rp {(pricing.profitMonthly).toLocaleString('id-ID')}</span>
-                        </div>
-                        <div className="flex justify-between pl-2">
-                             <span className="text-gray-500">Daily:</span>
-                             <span className="font-mono text-gray-700">Rp {(pricing.profitMonthly / 30).toLocaleString('id-ID', {maximumFractionDigits: 1})}</span>
-                        </div>
-                        <div className="flex justify-between pl-2">
-                             <span className="text-gray-500">Hourly:</span>
-                             <span className="font-mono text-gray-700">Rp {(pricing.profitMonthly / 730).toLocaleString('id-ID', {maximumFractionDigits: 2})}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-between font-medium pt-2 border-t border-gray-200 mt-2">
-                         <span className="text-gray-900">Final Selling Price:</span>
-                         <span className="font-mono text-primary-700">{formatCurrency(pricing.sellingMonthly)} / Bulan</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-400 pt-1">
-                         <span>Hourly Rate ({storageSize} GB):</span>
-                         <span className="font-mono">Rp {pricing.hourlyPrice.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2})} / Jam</span>
-                    </div>
                 </div>
              </div>
           </div>

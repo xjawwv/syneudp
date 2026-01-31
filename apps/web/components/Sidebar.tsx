@@ -72,7 +72,7 @@ const adminItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
@@ -101,7 +101,7 @@ export default function Sidebar() {
           );
         })}
 
-        {user && (
+        {user && profile?.role === "ADMIN" && (
           <>
             <div className="pt-6 pb-2">
               <span className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">

@@ -122,7 +122,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <LedgerTable entries={ledger.slice(0, 10)} loading={loading} />
+      <LedgerTable entries={ledger.slice(0, 5)} loading={loading} />
 
       {instances.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                         href={`/dashboard/infrastructure/database/${instance.id}`}
                         className="text-primary-600 hover:underline font-medium"
                       >
-                        {instance.dbName}
+                        {instance.name || instance.dbName}
                       </Link>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">

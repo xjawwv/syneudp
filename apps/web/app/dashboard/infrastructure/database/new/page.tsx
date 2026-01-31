@@ -74,7 +74,8 @@ export default function NewInstancePage() {
 
     const token = session!.access_token;
     const res = await apiPost<{ id: string }>("/instances", token, {
-      productId: productToUse.id, // Using the decided product ID
+      productId: productToUse.id,
+      name: dbName, // Sending user friendly name
     });
 
     if (res.success && res.data) {

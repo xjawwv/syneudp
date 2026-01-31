@@ -11,6 +11,7 @@ const router = Router();
 
 const CreateInstanceSchema = z.object({
   productId: z.string().min(1),
+  name: z.string().min(1).optional(),
   allowedIPs: z.array(z.string().ip()).optional(),
 });
 
@@ -31,7 +32,7 @@ router.post(
   validate(CreateInstanceSchema),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { productId, allowedIPs } = req.body;
+      const { productId, name, allowedIPs } = req.body;
       const product = await prisma.product.findUnique({ where: { id: productId } });
       if (!product) {
         res.status(404).json({ success: false, error: "Product not found" });
@@ -45,6 +46,7 @@ router.post(
         data: {
           userId: req.userId!,
           productId,
+          name, // User friendly name
           engine: product.engine,
           status: "provisioning",
           dbName,
@@ -103,6 +105,7 @@ router.get("/", async (req: AuthRequest, res: Response): Promise<void> => {
       success: true,
       data: instances.map((i: (typeof instances)[number]) => ({
         id: i.id,
+        name: i.name,
         engine: i.engine,
         status: i.status,
         dbName: i.dbName,
@@ -141,6 +144,7 @@ router.get("/:id", async (req: AuthRequest, res: Response): Promise<void> => {
       success: true,
       data: {
         id: instance.id,
+        name: instance.name,
         engine: instance.engine,
         status: instance.status,
         dbName: instance.dbName,

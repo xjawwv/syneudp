@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/currency";
 
 interface Instance {
   id: string;
+  name: string | null;
   engine: string;
   status: string;
   dbName: string;
@@ -48,15 +49,15 @@ export default function InstancesPage() {
   function getStatusColor(status: string) {
     switch (status) {
       case "running":
-        return "bg-green-50 text-green-600";
+        return "bg-emerald-50 text-emerald-600 border border-emerald-100";
       case "suspended":
-        return "bg-amber-50 text-amber-600";
+        return "bg-amber-50 text-amber-600 border border-amber-100";
       case "terminated":
-        return "bg-gray-50 text-gray-500";
+        return "bg-gray-100 text-gray-500 border border-gray-200";
       case "provisioning":
-        return "bg-blue-50 text-blue-600";
+        return "bg-blue-50 text-blue-600 border border-blue-100";
       case "error":
-        return "bg-red-50 text-red-600";
+        return "bg-red-50 text-red-600 border border-red-100";
       default:
         return "bg-gray-50 text-gray-600";
     }
@@ -105,12 +106,14 @@ export default function InstancesPage() {
       ) : instances.length === 0 ? (
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
              {/* Table Header Placeholder */}
-             <div className="grid grid-cols-7 gap-4 px-8 py-5 bg-gray-50/30 border-b border-gray-100">
-                {['NAME', 'STATUS', 'USAGE', 'AUTO RENEWAL', 'PRICE', 'EXPIRY', 'ACTIONS'].map(head => (
-                    <div key={head} className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em]">
-                        {head}
-                    </div>
-                ))}
+             <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 px-8 py-5 bg-gray-50/30 border-b border-gray-100">
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em]">NAME</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">STATUS</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">USAGE</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">AUTO RENEWAL</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">PRICE</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">EXPIRY</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">ACTIONS</div>
             </div>
             
             <div className="py-32 px-8 text-center flex flex-col items-center">
@@ -151,12 +154,14 @@ export default function InstancesPage() {
       ) : (
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
              {/* Table Header */}
-             <div className="grid grid-cols-7 gap-4 px-8 py-5 bg-gray-50/30 border-b border-gray-100">
-                {['NAME', 'STATUS', 'USAGE', 'AUTO RENEWAL', 'PRICE', 'EXPIRY', 'ACTIONS'].map(head => (
-                    <div key={head} className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em]">
-                        {head}
-                    </div>
-                ))}
+             <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 px-8 py-5 bg-gray-50/30 border-b border-gray-100">
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em]">NAME</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">STATUS</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">USAGE</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">AUTO RENEWAL</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">PRICE</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">EXPIRY</div>
+                <div className="text-[10px] font-extrabold text-gray-400 tracking-[0.1em] text-center">ACTIONS</div>
             </div>
 
             <div className="divide-y divide-gray-100">
@@ -164,7 +169,7 @@ export default function InstancesPage() {
                 <Link
                   key={instance.id}
                   href={`/dashboard/infrastructure/database/${instance.id}`}
-                  className="grid grid-cols-7 gap-4 px-8 py-6 items-center hover:bg-gray-50/40 transition-all group"
+                  className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_1fr_1fr] gap-4 px-8 py-6 items-center hover:bg-gray-50/40 transition-all group"
                 >
                   {/* NAME */}
                   <div className="flex items-center gap-4">
@@ -178,44 +183,49 @@ export default function InstancesPage() {
                         </svg>
                     </div>
                     <div>
-                        <div className="font-bold text-gray-900 text-base">{instance.dbName}</div>
-                        <div className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">{instance.engine}</div>
+                        <div className="font-bold text-gray-900 text-base group-hover:text-blue-600 transition-colors">
+                            {instance.name || instance.dbName}
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">
+                            {instance.engine} {instance.name && <span className="text-gray-300 ml-1">({instance.dbName})</span>}
+                        </div>
                     </div>
                   </div>
 
                   {/* STATUS */}
-                  <div className="flex">
-                    <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg tracking-[0.05em] shadow-sm ${getStatusColor(instance.status)}`}>
+                  <div className="flex justify-center">
+                    <span className={`px-2.5 py-1 text-[9px] font-bold uppercase rounded-full tracking-wider shadow-sm flex items-center gap-1.5 ${getStatusColor(instance.status)}`}>
+                      <div className={`w-1 h-1 rounded-full ${instance.status === 'running' ? 'bg-emerald-500 animate-pulse' : 'bg-current opacity-50'}`}></div>
                       {instance.status}
                     </span>
                   </div>
 
                   {/* USAGE */}
-                  <div className="text-sm font-bold text-gray-700">
+                  <div className="text-sm font-bold text-gray-700 text-center">
                     --
                   </div>
 
                   {/* AUTO RENEWAL */}
-                  <div className="text-[11px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                  <div className="text-[11px] font-black text-blue-600 uppercase tracking-widest flex items-center justify-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
                     Active
                   </div>
 
                   {/* PRICE */}
-                  <div className="text-sm font-black text-gray-900">
+                  <div className="text-sm font-black text-gray-900 text-center">
                     {formatCurrency(instance.ratePerHour)}<span className="text-gray-400 font-bold block text-[9px] uppercase tracking-tighter">Per Hour</span>
                   </div>
 
                   {/* EXPIRY */}
-                  <div className="text-sm font-bold text-gray-500">
+                  <div className="text-sm font-bold text-gray-500 text-center">
                     {instance.terminatedAt ? new Date(instance.terminatedAt).toLocaleDateString() : 'Auto-renew'}
                   </div>
 
                   {/* ACTIONS */}
-                  <div className="flex justify-end">
-                    <button className="p-2.5 text-gray-300 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all active:scale-90">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                  <div className="flex justify-center">
+                    <button className="px-4 py-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-all active:scale-95 flex items-center justify-center">
+                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                            <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                         </svg>
                     </button>
                   </div>

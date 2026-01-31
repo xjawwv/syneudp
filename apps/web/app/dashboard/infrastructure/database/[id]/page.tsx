@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/currency";
 
 interface Instance {
   id: string;
+  name: string | null;
   engine: string;
   status: string;
   dbName: string;
@@ -154,23 +155,24 @@ export default function InstanceDetailPage() {
             </svg>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">{instance.dbName}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{instance.name || instance.dbName}</h1>
             <p className="text-gray-500">
               {instance.engine} - {instance.productName}
             </p>
           </div>
         </div>
         <span
-          className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase rounded-full tracking-wider shadow-sm border ${
             isRunning
-              ? "bg-green-100 text-green-700"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-100"
               : isSuspended
-              ? "bg-yellow-100 text-yellow-700"
+              ? "bg-yellow-50 text-yellow-700 border-yellow-100"
               : isTerminated
-              ? "bg-gray-100 text-gray-700"
-              : "bg-blue-100 text-blue-700"
+              ? "bg-gray-100 text-gray-700 border-gray-200"
+              : "bg-blue-50 text-blue-700 border-blue-100"
           }`}
         >
+          <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-emerald-500 animate-pulse' : 'bg-current opacity-50'}`}></div>
           {instance.status}
         </span>
       </div>
@@ -226,8 +228,8 @@ export default function InstanceDetailPage() {
             <div>
               <label className="text-sm text-gray-500">Database</label>
               <div className="flex items-center gap-2 mt-1">
-                <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-sm">
-                  {instance.dbName}
+                <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-sm text-gray-700">
+                  {instance.name || instance.dbName}
                 </code>
                 <button
                   onClick={() => copyToClipboard(instance.dbName)}

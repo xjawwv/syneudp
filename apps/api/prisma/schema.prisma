@@ -74,6 +74,8 @@ model Instance {
   name                String?
   engine              String
   status              String        @default("provisioning")
+  storageSize         Int           @default(1)
+  ratePerHour         Decimal       @default(0) @db.Decimal(18, 6)
   dbName              String
   dbUser              String
   dbPasswordEncrypted String

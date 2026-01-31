@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Instance" ADD COLUMN     "name" TEXT,
+ADD COLUMN     "ratePerHour" DECIMAL(18,6) NOT NULL DEFAULT 0,
+ADD COLUMN     "storageSize" INTEGER NOT NULL DEFAULT 1;

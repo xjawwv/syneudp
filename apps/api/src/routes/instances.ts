@@ -11,12 +11,13 @@ const router = Router();
 
 const CreateInstanceSchema = z.object({
   productId: z.string().min(1),
-  name: z.string().min(1).optional(),
-  allowedIPs: z.array(z.string().ip()).optional(),
+  name: z.string({ required_error: "Database Name is required" }).min(1, "Database Name cannot be empty"),
+  storageSize: z.number().min(1).default(1),
+  allowedIPs: z.union([z.string(), z.array(z.string())]).optional(),
 });
 
 const AllowedIPsSchema = z.object({
-  allowedIPs: z.array(z.string().ip()),
+  allowedIPs: z.union([z.string(), z.array(z.string())]),
 });
 
 function generateDbName(): string {
@@ -32,12 +33,38 @@ router.post(
   validate(CreateInstanceSchema),
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { productId, name, allowedIPs } = req.body;
+      const { productId, name, storageSize, allowedIPs } = req.body;
       const product = await prisma.product.findUnique({ where: { id: productId } });
       if (!product) {
         res.status(404).json({ success: false, error: "Product not found" });
         return;
       }
+      
+      // Calculate rate based on storage: Rp 5.500/GB/month / 730 hours
+      const ratePerHour = storageSize * (5500 / 730);
+
+      // Check wallet balance
+      const user = await prisma.user.findUnique({
+        where: { id: req.userId },
+        include: { wallet: true },
+      });
+
+      if (!user?.wallet || Number(user.wallet.balance) < ratePerHour) {
+        res.status(400).json({
+          success: false,
+          error: `Insufficient balance. Minimum balance required to rent per hour: Rp ${ratePerHour.toLocaleString('id-ID', { maximumFractionDigits: 2 })}`,
+        });
+        return;
+      }
+      
+      // Process Allowed IPs (Comma supported)
+      let ips: string[] = [];
+      if (typeof allowedIPs === "string") {
+        ips = allowedIPs.split(",").map((ip: string) => ip.trim()).filter((ip: string) => ip.length > 0);
+      } else if (Array.isArray(allowedIPs)) {
+        ips = allowedIPs;
+      }
+
       const dbName = generateDbName();
       const dbUser = generateDbUser();
       const host = process.env.DB_HOST || "localhost";
@@ -46,16 +73,18 @@ router.post(
         data: {
           userId: req.userId!,
           productId,
-          name, // User friendly name
+          name, 
           engine: product.engine,
           status: "provisioning",
+          storageSize,
+          ratePerHour,
           dbName,
           dbUser,
           dbPasswordEncrypted: "",
           host,
           port,
-          allowedIPs: allowedIPs
-            ? { create: allowedIPs.map((ip: string) => ({ ip })) }
+          allowedIPs: ips.length > 0
+            ? { create: ips.map((ip: string) => ({ ip })) }
             : undefined,
         },
       });
@@ -111,7 +140,8 @@ router.get("/", async (req: AuthRequest, res: Response): Promise<void> => {
         dbName: i.dbName,
         host: i.host,
         port: i.port,
-        ratePerHour: Number(i.product.ratePerHour),
+        ratePerHour: Number(i.ratePerHour),
+        storageSize: i.storageSize,
         productName: i.product.name,
         createdAt: i.createdAt,
         terminatedAt: i.terminatedAt,
@@ -152,7 +182,8 @@ router.get("/:id", async (req: AuthRequest, res: Response): Promise<void> => {
         password,
         host: instance.host,
         port: instance.port,
-        ratePerHour: Number(instance.product.ratePerHour),
+        ratePerHour: Number(instance.ratePerHour),
+        storageSize: instance.storageSize,
         productName: instance.product.name,
         allowedIPs: instance.allowedIPs.map((ip: (typeof instance.allowedIPs)[number]) => ip.ip),
         createdAt: instance.createdAt,
@@ -289,9 +320,17 @@ router.put(
         res.status(404).json({ success: false, error: "Instance not found" });
         return;
       }
+
+      let ips: string[] = [];
+      if (typeof req.body.allowedIPs === "string") {
+        ips = req.body.allowedIPs.split(",").map((ip: string) => ip.trim()).filter((ip: string) => ip.length > 0);
+      } else if (Array.isArray(req.body.allowedIPs)) {
+        ips = req.body.allowedIPs;
+      }
+
       await prisma.allowedIP.deleteMany({ where: { instanceId: instance.id } });
       await prisma.allowedIP.createMany({
-        data: req.body.allowedIPs.map((ip: string) => ({
+        data: ips.map((ip: string) => ({
           instanceId: instance.id,
           ip,
         })),

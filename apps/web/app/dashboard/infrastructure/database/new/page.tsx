@@ -25,6 +25,7 @@ export default function NewInstancePage() {
   const [storageSize, setStorageSize] = useState(5); // Default 5GB
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -44,6 +45,11 @@ export default function NewInstancePage() {
         const sorted = sortEngines(engines);
         if (sorted.length > 0) setSelectedEngine(sorted[0]);
       }
+      
+      const walletRes = await apiGet<{ balance: number }>("/wallet", token);
+      if (walletRes.success && walletRes.data) {
+        setWallet(walletRes.data);
+      }
     }
     setLoading(false);
   }
@@ -56,6 +62,11 @@ export default function NewInstancePage() {
   async function handleSubmit() {
     if (!selectedEngine) {
       setError("Please select a database type");
+      return;
+    }
+
+    if (!dbName.trim()) {
+      setError("Database Name is required");
       return;
     }
     
@@ -75,7 +86,8 @@ export default function NewInstancePage() {
     const token = session!.access_token;
     const res = await apiPost<{ id: string }>("/instances", token, {
       productId: productToUse.id,
-      name: dbName, // Sending user friendly name
+      name: dbName,
+      storageSize: storageSize,
     });
 
     if (res.success && res.data) {
@@ -127,6 +139,7 @@ export default function NewInstancePage() {
   }
 
   const pricing = calculateStorageCost(storageSize);
+  const canAfford = wallet ? wallet.balance >= pricing.hourlyPrice : true;
 
   return (
     <div className="max-w-7xl mx-auto min-h-screen pb-12">
@@ -152,8 +165,22 @@ export default function NewInstancePage() {
         <div className="lg:col-span-2 space-y-6">
           
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-3">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="font-medium text-sm">{error}</span>
+            </div>
+          )}
+
+          {!canAfford && wallet && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg flex items-center gap-3">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm font-medium">
+                Topup required. Your balance ({formatCurrency(wallet.balance)}) is less than the hourly rate ({formatCurrency(pricing.hourlyPrice)}). 
+              </p>
             </div>
           )}
 
@@ -339,8 +366,8 @@ export default function NewInstancePage() {
 
                 <button
                     onClick={handleSubmit}
-                    disabled={submitting || !selectedEngine}
-                    className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 shadow-md hover:shadow-lg transform active:scale-[0.98] transition-all"
+                    disabled={submitting || !selectedEngine || !canAfford}
+                    className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform active:scale-[0.98] transition-all"
                 >
                     {submitting ? (
                         <span className="flex items-center justify-center gap-2">

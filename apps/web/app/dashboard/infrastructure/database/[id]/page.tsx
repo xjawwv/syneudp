@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet, apiPost, apiPut } from "@/lib/api";
 import { formatCurrency } from "@/lib/currency";
+import { formatDate, formatFullDateTime } from "@/lib/date";
+import { StatusBadge } from "@/components/status-badge";
 
 interface Instance {
   id: string;
@@ -18,6 +20,7 @@ interface Instance {
   host: string;
   port: number;
   ratePerHour: number;
+  storageSize: number;
   productName: string;
   allowedIPs: string[];
   createdAt: string;
@@ -29,6 +32,7 @@ export default function InstanceDetailPage() {
   const { session } = useAuth();
   const router = useRouter();
   const [instance, setInstance] = useState<Instance | null>(null);
+  const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -38,17 +42,36 @@ export default function InstanceDetailPage() {
 
   useEffect(() => {
     if (session?.access_token && id) {
-      loadInstance();
+      loadData();
     }
   }, [session, id]);
 
-  async function loadInstance() {
+  async function loadData() {
     const token = session!.access_token;
-    const res = await apiGet<Instance>(`/instances/${id}`, token);
-    if (res.success && res.data) {
-      setInstance(res.data);
+    const [instanceRes, walletRes] = await Promise.all([
+      apiGet<Instance>(`/instances/${id}`, token),
+      apiGet<{ balance: number }>("/wallet", token)
+    ]);
+
+    if (instanceRes.success && instanceRes.data) {
+      setInstance(instanceRes.data);
+    }
+    if (walletRes.success && walletRes.data) {
+      setWallet(walletRes.data);
     }
     setLoading(false);
+  }
+
+  function calculateExpiryDate(ratePerHour: number, balance: number) {
+    if (ratePerHour <= 0) return "Unlimited";
+    if (balance <= 0) return "Balance Empty";
+
+    const remainingHours = balance / ratePerHour;
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + Math.floor(remainingHours));
+    expiryDate.setMinutes(expiryDate.getMinutes() + Math.floor((remainingHours % 1) * 60));
+    
+    return expiryDate;
   }
 
   async function handleAction(action: string) {
@@ -59,7 +82,7 @@ export default function InstanceDetailPage() {
     const res = await apiPost(`/instances/${id}/${action}`, token);
     if (res.success) {
       setSuccess(`Instance ${action}d successfully`);
-      loadInstance();
+      loadData();
     } else {
       setError(res.error || `Failed to ${action} instance`);
     }
@@ -77,7 +100,7 @@ export default function InstanceDetailPage() {
     );
     if (res.success) {
       setSuccess("Password rotated successfully");
-      loadInstance();
+      loadData();
     } else {
       setError(res.error || "Failed to rotate password");
     }
@@ -87,13 +110,16 @@ export default function InstanceDetailPage() {
   async function handleAddIP() {
     if (!newIP) return;
     const token = session!.access_token;
-    const updatedIPs = [...(instance?.allowedIPs || []), newIP];
+    const ipsToAdd = newIP.split(',').map(ip => ip.trim()).filter(ip => ip.length > 0);
+    const currentIPs = instance?.allowedIPs || [];
+    const updatedIPs = Array.from(new Set([...currentIPs, ...ipsToAdd]));
+    
     const res = await apiPut(`/instances/${id}/allowed-ips`, token, {
       allowedIPs: updatedIPs,
     });
     if (res.success) {
       setNewIP("");
-      loadInstance();
+      loadData();
     } else {
       setError(res.error || "Failed to add IP");
     }
@@ -106,7 +132,7 @@ export default function InstanceDetailPage() {
       allowedIPs: updatedIPs,
     });
     if (res.success) {
-      loadInstance();
+      loadData();
     } else {
       setError(res.error || "Failed to remove IP");
     }
@@ -138,9 +164,6 @@ export default function InstanceDetailPage() {
     );
   }
 
-  const isTerminated = instance.status === "terminated";
-  const isRunning = instance.status === "running";
-  const isSuspended = instance.status === "suspended";
 
   return (
     <div className="space-y-6">
@@ -161,20 +184,7 @@ export default function InstanceDetailPage() {
             </p>
           </div>
         </div>
-        <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase rounded-full tracking-wider shadow-sm border ${
-            isRunning
-              ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-              : isSuspended
-              ? "bg-yellow-50 text-yellow-700 border-yellow-100"
-              : isTerminated
-              ? "bg-gray-100 text-gray-700 border-gray-200"
-              : "bg-blue-50 text-blue-700 border-blue-100"
-          }`}
-        >
-          <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-emerald-500 animate-pulse' : 'bg-current opacity-50'}`}></div>
-          {instance.status}
-        </span>
+        <StatusBadge status={instance.status} />
       </div>
 
       {error && (
@@ -289,59 +299,18 @@ export default function InstanceDetailPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="font-semibold text-gray-800 mb-4">Instance Actions</h2>
-            <div className="space-y-3">
-              {isRunning && (
-                <button
-                  onClick={() => handleAction("suspend")}
-                  disabled={actionLoading !== null}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-yellow-300 text-yellow-700 rounded-lg hover:bg-yellow-50 transition-colors disabled:opacity-50"
-                >
-                  {actionLoading === "suspend" ? "Suspending..." : "Suspend Instance"}
-                </button>
-              )}
-              {isSuspended && (
-                <button
-                  onClick={() => handleAction("resume")}
-                  disabled={actionLoading !== null}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-green-300 text-green-700 rounded-lg hover:bg-green-50 transition-colors disabled:opacity-50"
-                >
-                  {actionLoading === "resume" ? "Resuming..." : "Resume Instance"}
-                </button>
-              )}
-              {!isTerminated && (
-                <>
-                  <button
-                    onClick={handleRotatePassword}
-                    disabled={actionLoading !== null}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-                  >
-                    {actionLoading === "rotate" ? "Rotating..." : "Rotate Password"}
-                  </button>
-                  <button
-                    onClick={() => handleAction("terminate")}
-                    disabled={actionLoading !== null}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
-                  >
-                    {actionLoading === "terminate" ? "Terminating..." : "Terminate Instance"}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="font-semibold text-gray-800 mb-4">Allowed IPs</h2>
             <p className="text-sm text-gray-500 mb-4">
-              IP restrictions are stored but not enforced at network level in MVP.
+              IP restrictions are stored but not enforced at network level
             </p>
             <div className="flex gap-2 mb-4">
               <input
                 type="text"
                 value={newIP}
                 onChange={(e) => setNewIP(e.target.value)}
-                placeholder="Enter IP address"
+                placeholder="Enter IP(s) separate with comma"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
               />
               <button
@@ -383,7 +352,13 @@ export default function InstanceDetailPage() {
           <div>
             <label className="text-sm text-gray-500">Created</label>
             <p className="font-medium text-gray-800">
-              {new Date(instance.createdAt).toLocaleString()}
+              {formatFullDateTime(instance.createdAt)}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm text-gray-500">Storage Size</label>
+            <p className="font-medium text-gray-800">
+              {instance.storageSize} GB
             </p>
           </div>
           <div>
@@ -392,11 +367,23 @@ export default function InstanceDetailPage() {
               {formatCurrency(instance.ratePerHour)}/hour
             </p>
           </div>
+          <div>
+            <label className="text-sm text-gray-500">Estimated Expiry</label>
+            <p className="font-medium">
+              {(() => {
+                if (instance.terminatedAt) return <span className="text-gray-400">Terminated</span>;
+                const result = calculateExpiryDate(instance.ratePerHour, wallet?.balance || 0);
+                if (result === "Unlimited") return <span className="text-emerald-600">Unlimited (Free Tier)</span>;
+                if (result === "Balance Empty") return <span className="text-rose-500">Top-up Required</span>;
+                return <span className="text-gray-800">{formatFullDateTime(result as Date)}</span>;
+              })()}
+            </p>
+          </div>
           {instance.terminatedAt && (
             <div>
               <label className="text-sm text-gray-500">Terminated</label>
               <p className="font-medium text-gray-800">
-                {new Date(instance.terminatedAt).toLocaleString()}
+                {formatFullDateTime(instance.terminatedAt)}
               </p>
             </div>
           )}

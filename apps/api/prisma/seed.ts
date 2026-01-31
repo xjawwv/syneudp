@@ -3,38 +3,40 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clear existing products
-  await prisma.product.deleteMany({});
+  const products = [
+    {
+      id: "mysql",
+      name: "MySQL",
+      engine: "mysql",
+      tier: "shared",
+      ratePerHour: 7.53424657534,
+      description: "Managed MySQL Database",
+    },
+    {
+      id: "postgresql",
+      name: "PostgreSQL",
+      engine: "postgresql",
+      tier: "shared",
+      ratePerHour: 7.53424657534,
+      description: "Advanced Relational Database",
+    },
+    {
+      id: "mongodb",
+      name: "MongoDB",
+      engine: "mongodb",
+      tier: "shared",
+      ratePerHour: 7.53424657534,
+      description: "NoSQL Document Database",
+    },
+  ];
 
-  await prisma.product.createMany({
-    data: [
-      {
-        id: "mysql",
-        name: "MySQL",
-        engine: "mysql",
-        tier: "shared",
-        ratePerHour: 0, // Dynamic System Pricing
-        description: "Managed MySQL Database",
-      },
-      {
-        id: "postgresql",
-        name: "PostgreSQL",
-        engine: "postgresql",
-        tier: "shared",
-        ratePerHour: 0, // Dynamic System Pricing
-        description: "Advanced Relational Database",
-      },
-      {
-        id: "mongodb",
-        name: "MongoDB",
-        engine: "mongodb",
-        tier: "shared",
-        ratePerHour: 0, // Dynamic System Pricing
-        description: "NoSQL Document Database",
-      },
-    ],
-    skipDuplicates: true,
-  });
+  for (const product of products) {
+    await prisma.product.upsert({
+      where: { id: product.id },
+      update: { ratePerHour: product.ratePerHour, name: product.name, description: product.description },
+      create: product,
+    });
+  }
   console.log("Seed data updated: Using IDR values (800).");
 }
 

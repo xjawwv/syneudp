@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 
 import { formatCurrency } from "@/lib/currency";
+import { formatDate } from "@/lib/date";
+import { StatusBadge } from "@/components/status-badge";
 
 interface Instance {
   id: string;
@@ -16,6 +18,7 @@ interface Instance {
   host: string;
   port: number;
   ratePerHour: number;
+  storageSize: number;
   productName: string;
   createdAt: string;
   terminatedAt: string | null;
@@ -24,47 +27,125 @@ interface Instance {
 export default function InstancesPage() {
   const { session } = useAuth();
   const [instances, setInstances] = useState<Instance[]>([]);
+  const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<{id: string, action: string} | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
   useEffect(() => {
     if (session?.access_token) {
-      loadInstances();
+      loadData();
     }
   }, [session]);
 
-  async function loadInstances() {
+  async function loadData() {
     try {
       const token = session!.access_token;
-      const res = await apiGet<Instance[]>("/instances", token);
-      if (res.success && res.data) {
-        setInstances(res.data);
+      const [instancesRes, walletRes] = await Promise.all([
+        apiGet<Instance[]>("/instances", token),
+        apiGet<{ balance: number }>("/wallet", token)
+      ]);
+
+      if (instancesRes.success && instancesRes.data) {
+        setInstances(instancesRes.data);
+      }
+      if (walletRes.success && walletRes.data) {
+        setWallet(walletRes.data);
       }
     } catch (error) {
-      console.error("Failed to load instances:", error);
+      console.error("Failed to load dashboard data:", error);
     } finally {
       setLoading(false);
     }
   }
 
-  function getStatusColor(status: string) {
-    switch (status) {
-      case "running":
-        return "bg-emerald-50 text-emerald-600 border border-emerald-100";
-      case "suspended":
-        return "bg-amber-50 text-amber-600 border border-amber-100";
-      case "terminated":
-        return "bg-gray-100 text-gray-500 border border-gray-200";
-      case "provisioning":
-        return "bg-blue-50 text-blue-600 border border-blue-100";
-      case "error":
-        return "bg-red-50 text-red-600 border border-red-100";
-      default:
-        return "bg-gray-50 text-gray-600";
+  function calculateExpiryDate(instances: Instance[], balance: number) {
+    const totalHourlyRate = instances
+      .filter(i => i.status === 'running')
+      .reduce((sum, i) => sum + (i.ratePerHour || 0), 0);
+
+    // If no cost is being incurred but instances are running
+    if (totalHourlyRate <= 0) {
+        const runningCount = instances.filter(i => i.status === 'running').length;
+        if (runningCount > 0) return "Unlimited";
+        return "Auto-renew";
     }
+
+    // If incurring cost but balance is empty
+    if (balance <= 0) return "Balance Empty";
+
+    const remainingHours = balance / totalHourlyRate;
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + Math.floor(remainingHours));
+    expiryDate.setMinutes(expiryDate.getMinutes() + Math.floor((remainingHours % 1) * 60));
+    
+    return expiryDate;
   }
+
+  async function handleInstanceAction(e: React.MouseEvent, instanceId: string, action: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setActionLoading({id: instanceId, action});
+    setError("");
+    setSuccess("");
+    
+    const token = session!.access_token;
+    const res = await apiPost<{ password?: string }>(`/instances/${instanceId}/${action}`, token);
+    
+    if (res.success) {
+      if (action === 'rotate-password' && res.data?.password) {
+        setSuccess(`Password rotated! New password: ${res.data.password}`);
+      } else {
+        setSuccess(`Instance ${action === 'suspend' ? 'suspended' : action + 'd'} successfully`);
+      }
+      loadData();
+    } else {
+      setError(res.error || `Failed to ${action} instance`);
+    }
+    setActionLoading(null);
+    setOpenMenuId(null);
+  }
+
 
   return (
     <div className="space-y-8">
+      {/* Notifications */}
+      <div className="fixed top-24 right-8 z-50 space-y-4 max-w-md pointer-events-none">
+        {success && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-6 py-4 rounded-2xl shadow-xl animate-in slide-in-from-right pointer-events-auto flex items-center gap-3">
+             <div className="bg-emerald-500 p-1 rounded-lg">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+             </div>
+             <p className="font-bold text-sm tracking-tight">{success}</p>
+             <button onClick={() => setSuccess("")} className="ml-auto text-emerald-400 hover:text-emerald-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+             </button>
+          </div>
+        )}
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-6 py-4 rounded-2xl shadow-xl animate-in slide-in-from-right pointer-events-auto flex items-center gap-3">
+             <div className="bg-rose-500 p-1 rounded-lg">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+             </div>
+             <p className="font-bold text-sm tracking-tight">{error}</p>
+             <button onClick={() => setError("")} className="ml-auto text-rose-400 hover:text-rose-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+             </button>
+          </div>
+        )}
+      </div>
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -73,7 +154,7 @@ export default function InstancesPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => loadInstances()}
+            onClick={() => loadData()}
             className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm active:scale-95"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,15 +275,11 @@ export default function InstancesPage() {
 
                   {/* STATUS */}
                   <div className="flex justify-center">
-                    <span className={`px-2.5 py-1 text-[9px] font-bold uppercase rounded-full tracking-wider shadow-sm flex items-center gap-1.5 ${getStatusColor(instance.status)}`}>
-                      <div className={`w-1 h-1 rounded-full ${instance.status === 'running' ? 'bg-emerald-500 animate-pulse' : 'bg-current opacity-50'}`}></div>
-                      {instance.status}
-                    </span>
+                    <StatusBadge status={instance.status} />
                   </div>
 
-                  {/* USAGE */}
                   <div className="text-sm font-bold text-gray-700 text-center">
-                    --
+                    {instance.storageSize} GB
                   </div>
 
                   {/* AUTO RENEWAL */}
@@ -217,17 +294,96 @@ export default function InstancesPage() {
                   </div>
 
                   {/* EXPIRY */}
-                  <div className="text-sm font-bold text-gray-500 text-center">
-                    {instance.terminatedAt ? new Date(instance.terminatedAt).toLocaleDateString() : 'Auto-renew'}
+                  <div className="text-sm font-bold text-center">
+                    {(() => {
+                      if (instance.terminatedAt) return <span className="text-gray-400">{formatDate(instance.terminatedAt)}</span>;
+                      
+                      const result = calculateExpiryDate(instances, wallet?.balance || 0);
+                      
+                      if (result === "Unlimited") return <span className="text-emerald-600">Lifetime</span>;
+                      if (result === "Balance Empty") return <span className="text-rose-500">Topup Required</span>;
+                      if (result === "Auto-renew" || !result) return <span className="text-gray-400">Auto-renew</span>;
+                      
+                      const expiry = result as Date;
+                      return (
+                        <div className="flex flex-col items-center">
+                          <span className="text-gray-900">{formatDate(expiry)}</span>
+                          <span className="text-[9px] text-gray-400 font-medium uppercase">{expiry.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* ACTIONS */}
-                  <div className="flex justify-center">
-                    <button className="px-4 py-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-full transition-all active:scale-95 flex items-center justify-center">
+                  <div className="flex justify-center relative">
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === instance.id ? null : instance.id);
+                      }}
+                      className={`p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center border-2 ${
+                        openMenuId === instance.id 
+                        ? 'bg-blue-50 border-blue-200 text-blue-600' 
+                        : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200 hover:text-gray-600 shadow-sm'
+                      }`}
+                    >
                         <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                             <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                         </svg>
                     </button>
+
+                    {openMenuId === instance.id && (
+                      <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-[60] animate-in fade-in zoom-in-95 duration-100">
+                        {instance.status === 'running' && (
+                          <button
+                            onClick={(e) => handleInstanceAction(e, instance.id, 'suspend')}
+                            disabled={actionLoading?.id === instance.id}
+                            className="w-full px-4 py-2.5 text-left text-sm font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-3 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {actionLoading?.id === instance.id && actionLoading?.action === 'suspend' ? 'Suspending...' : 'Suspend'}
+                          </button>
+                        )}
+                        {instance.status === 'suspended' && (
+                          <button
+                            onClick={(e) => handleInstanceAction(e, instance.id, 'resume')}
+                            disabled={actionLoading?.id === instance.id}
+                            className="w-full px-4 py-2.5 text-left text-sm font-bold text-emerald-600 hover:bg-emerald-50 flex items-center gap-3 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {actionLoading?.id === instance.id && actionLoading?.action === 'resume' ? 'Resuming...' : 'Resume'}
+                          </button>
+                        )}
+                        {instance.status !== 'terminated' && (
+                          <button
+                            onClick={(e) => handleInstanceAction(e, instance.id, 'rotate-password')}
+                            disabled={actionLoading?.id === instance.id}
+                            className="w-full px-4 py-2.5 text-left text-sm font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                            {actionLoading?.id === instance.id && actionLoading?.action === 'rotate-password' ? 'Rotating...' : 'Rotate Password'}
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => handleInstanceAction(e, instance.id, 'terminate')}
+                          disabled={actionLoading?.id === instance.id}
+                          className="w-full px-4 py-2.5 text-left text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          {actionLoading?.id === instance.id && actionLoading?.action === 'terminate' ? 'Terminating...' : 'Terminate'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </Link>
               ))}

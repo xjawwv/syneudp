@@ -20,7 +20,7 @@ async function processBilling(): Promise<void> {
     const durationMs = now.getTime() - lastBilledAt.getTime();
     const durationSeconds = Math.floor(durationMs / 1000);
     if (durationSeconds < 60) continue;
-    const ratePerHour = Number(instance.product.ratePerHour);
+    const ratePerHour = Number(instance.ratePerHour);
     const amount = (durationSeconds / 3600) * ratePerHour;
     const wallet = instance.user.wallet;
     if (!wallet) continue;

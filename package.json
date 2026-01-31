@@ -1,0 +1,19 @@
+{
+  "name": "syneudp",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:agent": "npm run dev --workspace=apps/agent",
+    "build": "npm run build --workspaces",
+    "db:migrate": "npm run db:migrate --workspace=apps/api",
+    "db:seed": "npm run db:seed --workspace=apps/api"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

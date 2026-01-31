@@ -1,0 +1,68 @@
+services:
+  control-postgres:
+    image: postgres:16-alpine
+    container_name: syneudp-control-postgres
+    environment:
+      POSTGRES_USER: syneudp
+      POSTGRES_PASSWORD: syneudp_secret
+      POSTGRES_DB: syneudp_control
+    ports:
+      - "5432:5432"
+    volumes:
+      - control_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U syneudp -d syneudp_control"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  service-mysql:
+    image: mysql:8.0
+    container_name: syneudp-service-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql_root_secret
+    ports:
+      - "3306:3306"
+    volumes:
+      - service_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  service-postgres:
+    image: postgres:16-alpine
+    container_name: syneudp-service-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_root_secret
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - service_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: syneudp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  control_postgres_data:
+  service_mysql_data:
+  service_postgres_data:
+  redis_data:

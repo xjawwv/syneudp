@@ -51,7 +51,7 @@ export default function DepositsPage() {
     }
 
     const token = session!.access_token;
-    const res = await apiPost("/deposits", token, { amount: numAmount / 16000 });
+    const res = await apiPost("/deposits", token, { amount: numAmount });
 
     if (res.success) {
       setSuccess("Deposit request created successfully");
